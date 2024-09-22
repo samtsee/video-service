@@ -7,4 +7,11 @@ createdb:
 dropdb:
 	docker exec -it postgres dropdb video_service
 
-.PHONY: postgres createdb dropdb
+migrateup:
+	migrate -path migrations -database "postgres://root:secret@localhost:5432/video_service?sslmode=disable" -verbose up
+
+migratedown:
+	migrate -path migrations -database "postgres://root:secret@localhost:5432/video_service?sslmode=disable" -verbose down
+
+.PHONY: postgres createdb dropdb migrateup migratedown
+
