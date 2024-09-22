@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/signal"
 
 	"github.com/samtsee/video-service/internal/api"
 )
@@ -14,7 +16,10 @@ func main() {
 		return
 	}
 
-	err = app.Start(context.TODO())
+	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer cancel()
+
+	err = app.Start(ctx)
 	if err != nil {
 		fmt.Println("failed to start app: %w", err)
 	}

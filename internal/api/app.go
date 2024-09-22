@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	_ "github.com/lib/pq"
 	"github.com/samtsee/video-service/internal/repository"
@@ -34,10 +35,30 @@ func (a *App) Start(ctx context.Context) error {
 		Handler: a.router,
 	}
 
-	err := server.ListenAndServe()
-	if err != nil {
-		return fmt.Errorf("failed to start server: %w", err)
-	}
+	defer func() {
+		if err := a.db.Disconnect(); err != nil {
+			fmt.Errorf("failed to close postgres connection: %w", err)
+		}
+	}()
 
-	return nil
+	fmt.Println("Starting server")
+
+	ch := make(chan error, 1)
+
+	go func() {
+		err := server.ListenAndServe()
+		if err != nil {
+			ch <- fmt.Errorf("failed to start server: %w", err)
+		}
+		close(ch)
+	}()
+
+	select {
+	case err := <-ch:
+		return err
+	case <-ctx.Done():
+		timeout, cancel := context.WithTimeout(context.Background(), time.Second*10)
+		defer cancel()
+		return server.Shutdown(timeout)
+	}
 }
