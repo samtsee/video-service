@@ -8,9 +8,13 @@ import (
 )
 
 func main() {
-	app := api.New()
+	app, err := api.New()
+	if err != nil {
+		fmt.Println("failed to initialize app: ", err)
+		return
+	}
 
-	err := app.Start(context.TODO())
+	err = app.Start(context.TODO())
 	if err != nil {
 		fmt.Println("failed to start app: %w", err)
 	}

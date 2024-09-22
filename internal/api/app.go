@@ -4,18 +4,28 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+
+	_ "github.com/lib/pq"
+	"github.com/samtsee/video-service/internal/repository"
 )
 
 type App struct {
 	router http.Handler
+	db     repository.PostRepository
 }
 
-func New() *App {
-	app := &App{
-		router: loadRoutes(),
+func New() (*App, error) {
+	db, err := repository.NewPostgresRepo()
+	if err != nil {
+		return nil, fmt.Errorf("%w", err)
 	}
 
-	return app
+	app := &App{
+		router: loadRoutes(),
+		db:     db,
+	}
+
+	return app, nil
 }
 
 func (a *App) Start(ctx context.Context) error {
